@@ -90,93 +90,103 @@ DVB_DEFINE_MOD_OPT_ADAPTER_NR(adapter_nr);
 
 /* ------------------------------------------------------------------ */
 
-/*<IW> start */
+/*<IW> start refer to patch in http://www.mail-archive.com/linux-media@vger.kernel.org/msg75795.html*/
  
 static struct dibx000_agc_config dib7070_agc_config = {
-
-              BAND_UHF | BAND_VHF | BAND_LBAND | BAND_SBAND,
+              .band_caps = BAND_UHF | BAND_VHF | BAND_LBAND | BAND_SBAND,
 
               /*P_agc_use_sd_mod1=0, P_agc_use_sd_mod2=0, P_agc_freq_pwm_div=5, P_agc_inv_pwm1=0,P_agc_inv_pwm2=0,
               * P_agc_inh_dc_rv_est=0, P_agc_time_est=3, P_agc_freeze=0, P_agc_nb_est=5,P_agc_write=0 */
-              (0 << 15) | (0 << 14) | (5 << 11) | (0 << 10) | (0 << 9) | (0 << 8) 
-              | (3 << 5) | (0 << 4) | (5 << 1) | (0 << 0),
-
-              600,
-              10,
-
-              0,
-              118,
-
-              0,
-              3530,
-              1,
-              5,
-
-              65535,
-              0,
-
-              65535,
-              0,
-
-              0,
-              40,
-              183,
-              206,
-              255,
-              72,
-              152,
-              88,
-              90,
-
-              17,
-              27,
-              23,
-              51,
-
-              0,
+              .setup = (0 << 15) | (0 << 14) | (5 << 11) | (0 << 10) | (0 << 9) |
+                       (0 << 8) | (3 << 5) | (0 << 4) | (5 << 1) | (0 << 0),
+              .inv_gain = 600,
+              .time_stabiliz = 10,
+              .alpha_level = 0,
+              .thlock = 118,
+              .wbd_inv = 0,
+              .wbd_ref = 3530,
+              .wbd_sel = 1,
+              .wbd_alpha = 5,
+              .agc1_max = 65535,
+              .agc1_min = 0,
+              .agc2_max =  65535,
+              .agc2_min = 0,
+              .agc1_pt1 = 0,
+              .agc1_pt2 = 40,
+              .agc1_pt3 = 183,
+              .agc1_slope1 = 206,
+              .agc1_slope2 = 255,
+              .agc2_pt1 = 72,
+              .agc2_pt2 = 152,
+              .agc2_slope1 = 88,
+              .agc2_slope2 = 90,
+              .alpha_mant = 17,
+              .alpha_exp = 27,
+              .beta_mant = 23,
+              .beta_exp = 51,
+              .perform_agc_softsplit = 0,
 };
 
 static int dib7070_tuner_reset(struct dvb_frontend *fe, int onoff)
 {
-              return dib7000p_set_gpio(fe, 8, 0, !onoff);
+       //struct dib7000p_ops *dib7000p_ops = fe->sec_priv;
+       return dib7000p_set_gpio(fe, 8, 0, !onoff);
 }
 
 static int dib7070_tuner_sleep(struct dvb_frontend *fe, int onoff)
 {
-              return 0;
+    return 0;
 }
 
-static struct dib0070_config dib7070p_dib0070_config ={
-              
-                              .i2c_address = DEFAULT_DIB0070_I2C_ADDRESS,
-                              .reset = dib7070_tuner_reset,
-                              .sleep = dib7070_tuner_sleep,
-                              .clock_khz = 12000,
-              
+static struct dib0070_config dib7070p_dib0070_config = {
+    .i2c_address = DEFAULT_DIB0070_I2C_ADDRESS,
+    .reset = dib7070_tuner_reset,
+    .sleep = dib7070_tuner_sleep,
+    .clock_khz = 12000,
+    .freq_offset_khz_vhf = 950,
+    .freq_offset_khz_vhf = 550,
+    //.clock_pad_drive = 0,
+    .flip_chip = 1,
+    //.charge_pump = 2,
 };
 
 static struct dibx000_bandwidth_config dib7070_bw_config_12_mhz = {
-              60000, 15000, 
-              1, 20, 3, 1, 0,
-              0, 0, 1, 1, 2,
-              (3 << 14) | (1 << 12) | (524 << 0),
-              (0 << 25) | 0,
-              20452225,
-              12000000,
+       .internal = 60000,
+       .sampling = 15000,
+       .pll_prediv = 1,
+       .pll_ratio = 20,
+       .pll_range = 3,
+       .pll_reset = 1,
+       .pll_bypass = 0,
+       .enable_refdiv = 0,
+       .bypclk_div = 0,
+       .IO_CLK_en_core = 1,
+       .ADClkSrc = 1,
+       .modulo = 2,
+       /* refsel, sel, freq_15k */
+       .sad_cfg = (3 << 14) | (1 << 12) | (524 << 0),
+       .ifreq = (0 << 25) | 0,
+       .timf = 20452225,
+       .xtal_hz = 12000000,
 };
 
 static struct dib7000p_config dib7070p_dib7000p_config = {
-              .output_mpeg2_in_188_bytes = 1,
-              .agc_config_count = 1,
-              .agc = &dib7070_agc_config,
-              .bw  = &dib7070_bw_config_12_mhz,
-              .tuner_is_baseband = 1,
-              .spur_protect = 1,
-              .gpio_dir = 0xfcef,
-              .gpio_val = 0x0110,
-              .gpio_pwm_pos = DIB7000P_GPIO_DEFAULT_PWM_POS,
-              .hostbus_diversity = 1,
-              .output_mode = OUTMODE_MPEG2_PAR_GATED_CLK,
+       //.output_mode = OUTMODE_MPEG2_FIFO,
+       .output_mode = OUTMODE_MPEG2_SERIAL,
+       //.output_mode = OUTMODE_MPEG2_PAR_GATED_CLK,
+       .output_mpeg2_in_188_bytes = 1,
+
+       .agc_config_count = 1,
+       .agc = &dib7070_agc_config,
+       .bw  = &dib7070_bw_config_12_mhz,
+       .tuner_is_baseband = 1,
+       .spur_protect = 1,
+
+       .gpio_dir = 0xfcef, //DIB7000P_GPIO_DEFAULT_DIRECTIONS,
+       .gpio_val = 0x0110, //DIB7000P_GPIO_DEFAULT_VALUES,
+       .gpio_pwm_pos = DIB7000P_GPIO_DEFAULT_PWM_POS,
+
+       .hostbus_diversity = 1,
 };
 
 /*<IW> End */
@@ -840,6 +850,7 @@ static int netup_altera_fpga_rw(void *device, int flag, int data, int read)
 
 static int dvb_register(struct cx23885_tsport *port)
 {
+    //struct dib7000p_ops dib7000p_ops;
 	struct cx23885_dev *dev = port->dev;
 	struct cx23885_i2c *i2c_bus = NULL, *i2c_bus2 = NULL;
 	struct videobuf_dvb_frontend *fe0, *fe1 = NULL;
@@ -1044,7 +1055,7 @@ static int dvb_register(struct cx23885_tsport *port)
 	case CX23885_BOARD_DVICO_FUSIONHDTV_DVB_T_DUAL_EXP2:
 	    i2c_bus = &dev->i2c_bus[port->nr - 1];
 	    fe0->dvb.frontend = dvb_attach(dib7000p_attach, &i2c_bus->i2c_adap, 0x12, &dib7070p_dib7000p_config);
-	    
+
 	    if (fe0->dvb.frontend != NULL)
 	        dvb_attach(dib0070_attach, fe0->dvb.frontend, &i2c_bus->i2c_adap, &dib7070p_dib0070_config);
 	    break;
